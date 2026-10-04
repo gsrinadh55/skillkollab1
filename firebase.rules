@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Projects/Challenges
+    match /challenges/{challengeId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // 2. Team Teams
+    match /teams/{teamId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // 3. Team Members Subcollection
+    match /teams/{teamId}/teamMembers/{memberId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 4. Team Members Base Collection
+    match /teamMembers/{memberId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // 5. Applications Collection
+    match /applications/{applicationId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 6. Users Collection
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 7. Workspace Kanban Tasks
+    match /workspaceTasks/{taskId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 8. Workspace Documents
+    match /workspaceDocuments/{documentId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
