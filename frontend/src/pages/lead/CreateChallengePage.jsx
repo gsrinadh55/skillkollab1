@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { challengesService } from '../../services/firebase/challenges';
+import { teamsService } from '../../services/firebase/teams';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 const CATEGORIES = [
@@ -243,44 +245,98 @@ export function CreateChallengePage() {
     const toastId = toast.loading(status === 'DRAFT' ? 'Saving draft...' : 'Publishing challenge...');
 
     try {
-      const payload = {
+      const currentUserId = user?.uid || user?.id || user?._id;
+      const currentUserName = user?.name || user?.displayName || user?.email?.split('@')[0] || 'Innovation Lead';
+      const currentUserAvatar = user?.avatarUrl || user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+
+      const challengeData = {
         title: formData.title,
         description: formData.description,
+        shortDescription: formData.description ? formData.description.slice(0, 160) : '',
         problemStatement: formData.problemStatement,
         category: formData.category,
+        industry: formData.industry || 'Technology',
         difficulty: formData.difficulty,
-        minTeamSize: formData.minTeamSize,
-        maxTeamSize: formData.maxTeamSize,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        workMode: formData.workModel,
-        rewardType: formData.rewardType,
-        rewardAmount: formData.rewardAmount,
-        requiredSkills: formData.requiredSkills,
+        expectedOutcome: formData.expectedOutcome || '',
+        impactArea: formData.impactArea || '',
+        sdgGoals: formData.sdgGoals || [],
+        impactDescription: formData.impactDescription || '',
+        requiredSkills: formData.requiredSkills || [],
+        minTeamSize: formData.minTeamSize || 2,
+        maxTeamSize: formData.maxTeamSize || 5,
+        startDate: formData.startDate || '',
+        endDate: formData.endDate || '',
+        workMode: formData.workModel || 'Remote',
+        workModel: formData.workModel || 'Remote',
+        sprintDuration: formData.sprintDuration || '4 Weeks',
+        rewardType: formData.rewardType || 'Bounty',
+        rewardAmount: formData.rewardAmount || '',
+        additionalRecognition: formData.additionalRecognition || '',
         status: status,
+        creatorId: currentUserId,
+        ownerId: currentUserId,
+        leadId: currentUserId,
+        creatorName: currentUserName,
+        creatorAvatar: currentUserAvatar,
+        organization: formData.organization || user?.profile?.organization || currentUserName,
+        applicantCount: 0,
+        views: 0,
+        bookmarksCount: 0,
         roles: formData.roles.map(r => ({
           name: r.name,
-          count: r.count,
+          count: r.count || 1,
           skills: r.skills || [],
           description: r.description || ''
         }))
       };
 
-      let response;
-      if (draftId) {
-        response = await api.put(`/projects/${draftId}`, payload);
-      } else {
-        response = await api.post('/projects', payload);
+      // 1. Save to Firebase Firestore (source of truth for challenges)
+      let savedChallengeId = null;
+      try {
+        if (draftId) {
+          await challengesService.updateChallenge(draftId, challengeData);
+          savedChallengeId = draftId;
+        } else {
+          savedChallengeId = await challengesService.createChallenge(challengeData);
+        }
+      } catch (fbErr) {
+        console.warn('Firebase createChallenge error:', fbErr);
       }
-      
-      const savedChallengeId = response.data?.id || response.data?.data?.id || response.id;
-      
+
+      // 2. Automatically create Team in Firebase for published challenges
+      if (savedChallengeId && status === 'PUBLISHED') {
+        try {
+          await teamsService.createTeam(savedChallengeId, currentUserId, `${formData.title} Team`);
+        } catch (teamErr) {
+          console.warn('Team creation error:', teamErr);
+        }
+      }
+
+      // 3. Save / sync to backend API concurrently
+      try {
+        const apiPayload = {
+          ...challengeData,
+          id: savedChallengeId || undefined,
+          roles: formData.roles
+        };
+        if (draftId) {
+          await api.put(`/projects/${draftId}`, apiPayload);
+        } else {
+          const apiRes = await api.post('/projects', apiPayload);
+          if (!savedChallengeId) {
+            savedChallengeId = apiRes.data?.id || apiRes.data?.data?.id || apiRes.id;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('API save notice:', apiErr);
+      }
+
       if (status === 'DRAFT') {
-        if (!draftId) setDraftId(savedChallengeId);
+        if (!draftId && savedChallengeId) setDraftId(savedChallengeId);
         toast.success('Challenge saved as draft.', { id: toastId });
       } else {
-        toast.success('Challenge published successfully.', { id: toastId });
-        navigate(`/projects/${savedChallengeId}`);
+        toast.success('🎉 Challenge published successfully!', { id: toastId });
+        navigate('/my-challenges');
       }
     } catch (error) {
       console.error('Error saving challenge:', error);

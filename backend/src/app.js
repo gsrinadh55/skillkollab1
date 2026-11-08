@@ -7,6 +7,7 @@ import apiRouter from './routes/index.js'
 import { errorMiddleware } from './middlewares/error.middleware.js'
 import { notFoundMiddleware } from './middlewares/not-found.middleware.js'
 import { env } from './config/env.js'
+import { getDbStatus } from './config/db.js'
 
 export function createApp() {
   const app = express()
@@ -22,7 +23,13 @@ export function createApp() {
           return
         }
 
-        if (env.nodeEnv === 'development' && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))) {
+        // Allow Vercel deployments and Render domains
+        if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
+          callback(null, true)
+          return
+        }
+
+        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
           callback(null, true)
           return
         }
@@ -60,6 +67,8 @@ export function createApp() {
       status: 'ok',
       service: 'skillkollab-api',
       environment: env.nodeEnv,
+      database: getDbStatus(),
+      uptimeSeconds: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
     })
   })

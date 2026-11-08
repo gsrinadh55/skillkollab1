@@ -1,8 +1,11 @@
+import { getDbStatus } from '../config/db.js'
+
 export function getHealth(request, response) {
   response.status(200).json({
     status: 'ok',
     service: 'skillkollab-api',
     environment: process.env.NODE_ENV ?? 'development',
+    database: getDbStatus(),
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   })

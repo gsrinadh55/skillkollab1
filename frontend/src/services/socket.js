@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') ? 'https://skillkollab1.onrender.com' : 'http://localhost:4000');
 
 class SocketService {
   constructor() {

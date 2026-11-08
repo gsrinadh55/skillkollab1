@@ -16,25 +16,34 @@ try {
 
 export const prisma = prismaInstance || null
 
+let dbStatus = { connected: false, mode: 'INITIALIZING' }
+
+export function getDbStatus() {
+  return dbStatus
+}
+
 export async function initDb() {
   if (!prisma) {
     console.log('💡 [Offline Evaluation Active]: Server initialized cleanly with high-performance in-memory repository fallbacks! (Zero DB blocking)')
-    return { connected: false, mode: 'IN_MEMORY_STORE' }
+    dbStatus = { connected: false, mode: 'IN_MEMORY_STORE' }
+    return dbStatus
   }
 
   try {
     await prisma.$connect()
     console.log('📦 [Database] Successfully connected to PostgreSQL via Prisma Client.')
-    return { connected: true, mode: 'POSTGRESQL' }
+    dbStatus = { connected: true, mode: 'POSTGRESQL' }
+    return dbStatus
   } catch (error) {
     console.warn('⚠️ [Database Notice]: Could not establish TCP connection to PostgreSQL instance.')
     console.warn('💡 [Offline Evaluation Active]: Switching cleanly to in-memory repository fallbacks!')
-    return { connected: false, error: error.message, mode: 'IN_MEMORY_STORE' }
+    dbStatus = { connected: false, error: error.message, mode: 'IN_MEMORY_STORE' }
+    return dbStatus
   }
 }
 
 export async function disconnectDb() {
   if (prisma) {
-    await prisma.$disconnect().catch(() => {})
+    await prisma.$disconnect().catch(() => { })
   }
 }

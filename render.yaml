@@ -1,0 +1,47 @@
+services:
+  # Backend Web Service (Node.js Express + Socket.IO)
+  - type: web
+    name: skillkollab-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillkollab-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+
+  # Frontend Static Site (Vite + React)
+  - type: web
+    name: skillkollab-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false
+
+databases:
+  - name: skillkollab-db
+    plan: free
+    databaseName: skillkollab
+    user: skillkollab
+

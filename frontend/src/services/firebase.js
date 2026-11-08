@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCLNTjaiAhGHZlrYxQJh9evJJ2SGEcH1t8",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "skillkollab.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "skillkollab",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "skillkollab.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "442805665906",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:442805665906:web:33f43447fceb87790e82eb",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-GPT8NQEFJF"
 };
 
 // Initialize Firebase
